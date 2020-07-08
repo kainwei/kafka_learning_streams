@@ -40,7 +40,7 @@ public class StatelessTransformationsMain {
         aKeyStream = aKeyStream.map((key, value) -> KeyValue.pair(key.toUpperCase(), value));
 
         // merge 2 streams together
-        KStream<String, String> mergedStream = aKeyStream = aKeyStream.merge(otherstream);
+        KStream<String, String> mergedStream = aKeyStream.merge(otherstream);
 
         // print each record to the console
         mergedStream = mergedStream.peek((key, value) -> System.out.println("key=" + key + ", value=" + value ));
