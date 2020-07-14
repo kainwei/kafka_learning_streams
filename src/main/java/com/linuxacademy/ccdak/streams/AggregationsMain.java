@@ -2,11 +2,14 @@ package com.linuxacademy.ccdak.streams;
 
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.kstream.*;
 
 public class AggregationsMain {
 
@@ -24,7 +27,30 @@ public class AggregationsMain {
         final StreamsBuilder builder = new StreamsBuilder();
         
         //Implement streams logic.
-        
+        KStream<String, String> source = builder.stream("aggregation-input-topic");
+
+        // Group the source stream by the exiting key
+        KGroupedStream<String, String> groupedStream = source.groupByKey();
+
+        // Create an aggregation that totals the length in characters of the value for all records sharing the same key
+        KTable<String, Integer> aggregatedTable = groupedStream.aggregate(
+                () -> 0,
+                (aggKey, newValue, aggValue) -> aggValue + newValue.length(),
+                Materialized.with(Serdes.String(), Serdes.Integer())
+                );
+
+        aggregatedTable.toStream().to("aggregation-output-charactercount-topic",
+                Produced.with(Serdes.String(), Serdes.Integer()));
+
+        // count the number of each key
+        KTable<String, Long> countedTable = groupedStream.count(Materialized.with(Serdes.String(), Serdes.Long()));
+        countedTable.toStream().to("aggregations-output-count-topic", Produced.with(Serdes.String(), Serdes.Long()));
+
+        // Combine the values of all records with the same key into a string separated by spaces
+        KTable<String, String> reducedTable = groupedStream.reduce((aggValue, newValue) -> aggValue + " " + newValue);
+        reducedTable.toStream().to("aggregations-output-reduce-topic");
+
+
         final Topology topology = builder.build();
         final KafkaStreams streams = new KafkaStreams(topology, props);
         // Print the topology to the console.

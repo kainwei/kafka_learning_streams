@@ -22,7 +22,7 @@ public class StatelessTransformationsMain {
 
         // Get the source stream.
         final StreamsBuilder builder = new StreamsBuilder();
-        final KStream<String, String> source = builder.stream("stateless-transformation-input-topic");
+        final KStream<String, String> source = builder.stream("stateless-transformations-input-topic");
         KStream<String, String>[] branches = source.branch((key, value) -> key.startsWith("a"), (key, value) -> true);
         KStream<String, String> aKeyStream = branches[0];
         KStream<String, String> otherstream = branches[1];
@@ -37,6 +37,8 @@ public class StatelessTransformationsMain {
         });
 
          // aKeyStream.foreach((key, value) -> System.out.println("key=" + key + ", value=" + value));
+
+        // Make key to upper case
         aKeyStream = aKeyStream.map((key, value) -> KeyValue.pair(key.toUpperCase(), value));
 
         // merge 2 streams together
