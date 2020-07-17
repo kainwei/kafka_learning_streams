@@ -27,7 +27,7 @@ public class AggregationsMain {
         final StreamsBuilder builder = new StreamsBuilder();
         
         //Implement streams logic.
-        KStream<String, String> source = builder.stream("aggregation-input-topic");
+        KStream<String, String> source = builder.stream("aggregations-input-topic");
 
         // Group the source stream by the exiting key
         KGroupedStream<String, String> groupedStream = source.groupByKey();
@@ -39,7 +39,7 @@ public class AggregationsMain {
                 Materialized.with(Serdes.String(), Serdes.Integer())
                 );
 
-        aggregatedTable.toStream().to("aggregation-output-charactercount-topic",
+        aggregatedTable.toStream().to("aggregations-output-charactercount-topic",
                 Produced.with(Serdes.String(), Serdes.Integer()));
 
         // count the number of each key
