@@ -52,7 +52,7 @@ public class AggregationsMain {
 
 
         final Topology topology = builder.build();
-        final KafkaStreams streams = new KafkaStreams(topology, props);
+       inal KafkaStreams streams = new KafkaStreams(topology, props);
         // Print the topology to the console.
         System.out.println(topology.describe());
         final CountDownLatch latch = new CountDownLatch(1);

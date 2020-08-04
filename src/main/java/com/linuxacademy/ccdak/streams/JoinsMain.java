@@ -1,5 +1,6 @@
 package com.linuxacademy.ccdak.streams;
 
+import java.time.Duration;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import org.apache.kafka.common.serialization.Serdes;
@@ -7,6 +8,8 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.kstream.JoinWindows;
+import org.apache.kafka.streams.kstream.KStream;
 
 public class JoinsMain {
 
@@ -22,8 +25,25 @@ public class JoinsMain {
 
         // Get the source stream.
         final StreamsBuilder builder = new StreamsBuilder();
-        
-        //Implement streams logic.
+        KStream<String, String> left = builder.stream("joins-input-topic-left");
+        KStream<String, String> right = builder.stream("joins-input-topic-right");
+        //Perform an inner join
+        KStream<String, String> innerJoined = left.join(
+                right, (leftValue, rightValue) -> "left=" + leftValue + ", right=" + rightValue,
+                JoinWindows.of(Duration.ofMinutes(5)));
+        innerJoined.to("inner-join-output-topic");
+
+        //Perform an left join
+        KStream<String, String> leftJoined = left.leftJoin(
+                right, (leftValue, rightValue) -> "left=" + leftValue + ", right=" + rightValue,
+                JoinWindows.of(Duration.ofMinutes(5)));
+        innerJoined.to("left-join-output-topic");
+
+        //Perform an outer join
+        KStream<String, String> outerJoined = left.outerJoin(
+                right, (leftValue, rightValue) -> "left=" + leftValue + ", right=" + rightValue,
+                JoinWindows.of(Duration.ofMinutes(5)));
+        innerJoined.to("outer-join-output-topic");
         
         final Topology topology = builder.build();
         final KafkaStreams streams = new KafkaStreams(topology, props);
@@ -31,7 +51,7 @@ public class JoinsMain {
         System.out.println(topology.describe());
         final CountDownLatch latch = new CountDownLatch(1);
 
-        // Attach a shutdown handler to catch control-c and terminate the application gracefully.
+        // Attach; a shutdown handler to catch control-c and terminate the application gracefully.
         Runtime.getRuntime().addShutdownHook(new Thread("streams-shutdown-hook") {
             @Override
             public void run() {
